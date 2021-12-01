@@ -29,6 +29,7 @@ def get_parsed_answer(attempts: list) -> str:
 
 def send_tg_message(text: str, chat_id=CHAT_ID, token=TG_TOKEN):
     """Send message to TG chat with chat_id using TG token."""
+    logger = logging.getLogger("main.send_message")
     bot = telegram.Bot(token=token)
     bot.send_message(chat_id=chat_id, text=text)
     logger.info('Message sent.')
@@ -37,6 +38,7 @@ def send_tg_message(text: str, chat_id=CHAT_ID, token=TG_TOKEN):
 def get_works():
     """Get reviewed works at DVMN server."""
     request_params = {}
+    logger = logging.getLogger("main.get_works")
     
     while True:
         try:
