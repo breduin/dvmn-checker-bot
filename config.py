@@ -1,14 +1,9 @@
 import os
 
-from environs import Env
 
-
-env = Env()
-env.read_env()
-
-DVMN_TOKEN = env.str('DVMN_TOKEN')
-TG_TOKEN = env.str('TG_TOKEN')
-CHAT_ID = env('CHAT_ID')
+DVMN_TOKEN = os.environ['DVMN_TOKEN']
+TG_TOKEN = os.environ['TG_TOKEN']
+CHAT_ID = os.environ['CHAT_ID']
 
 HEADERS = {
   'Authorization': f'Token {DVMN_TOKEN}'
