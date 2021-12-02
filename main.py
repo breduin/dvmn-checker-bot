@@ -75,7 +75,7 @@ def get_works():
 def main():
     """Application entry point."""
 
-    logger.setLevel(logging.INFO)
+    logger.setLevel(logging.DEBUG)
 
     file_handler = RotatingFileHandler("main.log", maxBytes=100000, backupCount=2)
     file_handler.setLevel(logging.INFO)
