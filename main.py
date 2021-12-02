@@ -13,13 +13,12 @@ from config import URL, HEADERS, TIMEOUT, TG_TOKEN, CHAT_ID, CONNECTION_RETRY_WA
 
 logger = logging.getLogger(__file__)
 
-is_negative_text = {
+
+def get_parsed_answer(attempts: list) -> str:
+    is_negative_text = {
     True: 'К сожалению, в работе нашлись ошибки.',
     False: 'Задание выполнено, можете приступать к следующему уроку.'
 }
-
-
-def get_parsed_answer(attempts: list) -> str:
     answer = ''
     for attempt in attempts:
         answer += f"""
@@ -35,7 +34,6 @@ def send_tg_message(text: str, chat_id=CHAT_ID, token=TG_TOKEN):
     """Send message to TG chat with chat_id using TG token."""
     bot = telegram.Bot(token=token)
     bot.send_message(chat_id=chat_id, text=text)
-    logger.info('Message sent.')
 
 
 def get_works():
@@ -70,10 +68,17 @@ def get_works():
             request_params["timestamp"] = works["last_attempt_timestamp"]
             answer = get_parsed_answer(works['new_attempts'])
             send_tg_message(answer)
+            logger.info('Message sent.')
 
 
 def main():
     """Application entry point."""
+    class BotHandler(logging.Handler):
+
+        def emit(self, record):
+            log_entry = self.format(record)
+            send_tg_message(log_entry)
+
 
     logger.setLevel(logging.DEBUG)
 
@@ -87,14 +92,22 @@ def main():
     stream_formatter = logging.Formatter('%(asctime)s - %(message)s')
     stream_handler.setFormatter(stream_formatter)
 
-    
+    bot_handler = BotHandler()
+    bot_handler.setLevel(logging.INFO)
+    bot_formatter = logging.Formatter('%(message)s')
+    bot_handler.setFormatter(bot_formatter)
+
     logger.addHandler(file_handler)
     logger.addHandler(stream_handler)
+    logger.addHandler(bot_handler)
 
     logger.debug('Main.py started.')
     logger.info('Program started.')
-
-    get_works()
+    
+    try:
+        get_works()
+    except Exception as e:
+        logger.error(f'{e}')
     logger.debug('Done!')
 
 
@@ -104,3 +117,4 @@ if __name__ == '__main__':
         main()
     except KeyboardInterrupt:
         exit()
+
