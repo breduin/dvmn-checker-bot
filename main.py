@@ -103,18 +103,19 @@ def main():
 
     logger.debug('Main.py started.')
     logger.info('Program started.')
-    
-    try:
-        get_works()
-    except Exception as e:
-        logger.error(f'{e}')
-    logger.debug('Done!')
 
+    2/0
+    get_works()
 
 if __name__ == '__main__':
 
     try:
         main()
     except KeyboardInterrupt:
+        logger.info('Program stopped.')
         exit()
+    except ZeroDivisionError:
+        logger.exception('Деление на ноль.')
+        exit()
+    
 
