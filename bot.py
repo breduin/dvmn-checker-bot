@@ -113,8 +113,15 @@ def main():
 
     logger.debug('Bot started.')
     logger.info('Program started.')
+    
+    while True:
+        try:
+            get_works()
+        except ZeroDivisionError:
+            logger.exception('Деление на ноль.')
+            logger.info('Бот упал. Отжался. Работает дальше.')
 
-    get_works()
+    logger.info('Program stopped.')
 
 
 if __name__ == '__main__':
@@ -123,6 +130,4 @@ if __name__ == '__main__':
     except KeyboardInterrupt:
         logger.info('Program stopped.')
         exit()
-    except ZeroDivisionError:
-        logger.exception('Деление на ноль.')
-        exit()
+
