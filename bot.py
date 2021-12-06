@@ -9,6 +9,7 @@ import logging
 from logging.handlers import RotatingFileHandler
 from textwrap import dedent
 from time import sleep
+from environs import Env
 
 
 logger = logging.getLogger(__file__)
@@ -33,28 +34,30 @@ def get_parsed_answer(attempts: list) -> str:
 
 def get_works():
     """Listen DVMN server and get reviewed works as soon as they appear."""
-    # Время в сек., в течение которого бот ожидает ответ сервера dvmn.org
-    TIMEOUT = 90
+    env = Env()
+    env.read_env()
 
-    # Пауза в сек. между попытками бота подключиться к серверу dvmn.org
+    TG_TOKEN = env.str('TG_TOKEN')
+    TG_CHAT_ID = env.str('TG_CHAT_ID')
+
+    RESPONSE_WAITING_TIME = 90    
     CONNECTION_RETRY_WAITING_TIME = 60
-
-    # Заголовок запроса с ключом DVMN
-    HEADERS = {
-    'Authorization': f'Token {os.environ["DVMN_TOKEN"]}'
+    DVMN_REQUEST_HEADERS = {
+    'Authorization': f'Token {env.str("DVMN_TOKEN")}'
     }
-    # URL для API DVMN
-    URL = 'https://dvmn.org/api/long_polling/'
+    DVMN_URL = 'https://dvmn.org/api/long_polling/'
 
     request_params = {}
+
+    works_checking_bot = telegram.Bot(token=TG_TOKEN)
 
     while True:
         logger.debug('Sending request ...')
         try:
-            response = requests.get(URL,
-                                    headers=HEADERS,
+            response = requests.get(DVMN_URL,
+                                    headers=DVMN_REQUEST_HEADERS,
                                     params=request_params,
-                                    timeout=TIMEOUT,
+                                    timeout=RESPONSE_WAITING_TIME,
                                     )
             response.raise_for_status()
         except requests.ReadTimeout:
@@ -73,35 +76,33 @@ def get_works():
             logger.info('Found reviewed works.')
             request_params["timestamp"] = works["last_attempt_timestamp"]
             answer = get_parsed_answer(works['new_attempts'])
-            logger.info(answer)
+            works_checking_bot.send_message(chat_id=TG_CHAT_ID, text=answer)
 
 
 def main():
     """Application entry point."""
 
-    # Ключ API Telegram
-    TG_TOKEN = os.environ['TG_TOKEN']
-    # ID пользователя Telegram
-    CHAT_ID = os.environ['CHAT_ID']
-    # Записывать логи в файл?
-    FILE = (os.getenv('FILE', 'False') == 'True')
-    # Выводить логи в терминал?
-    STREAM = (os.getenv('STREAM', 'False') == 'True')
-    # Выводить логи в телеграм-чат?
-    BOT = (os.getenv('BOT', 'False') == 'True')
+    env = Env()
+    env.read_env()
 
-    class BotHandler(logging.Handler):
+    TG_TOKEN = env.str('TG_TOKEN')
+    TG_CHAT_ID = env.str('TG_CHAT_ID')
+    
+    SAVE_LOGS_TO_FILE = env.bool('SAVE_LOGS_TO_FILE')
+    SEND_LOGS_TO_STREAM = env.bool('SEND_LOGS_TO_STREAM')
+    SEND_LOGS_TO_BOT = env.bool('SEND_LOGS_TO_BOT')
 
-        bot = telegram.Bot(token=TG_TOKEN)
+    logging_bot = telegram.Bot(token=TG_TOKEN)
+
+    class BotHandler(logging.Handler):        
 
         def emit(self, record):
             log_entry = self.format(record)
-            self.bot.send_message(chat_id=CHAT_ID, text=log_entry)
+            logging_bot.send_message(chat_id=TG_CHAT_ID, text=log_entry)
 
-    # Set logging level.
     logger.setLevel(logging.DEBUG)
 
-    if FILE:
+    if SAVE_LOGS_TO_FILE:
         file_handler = RotatingFileHandler(
             'main.log',
             maxBytes=100000,
@@ -114,14 +115,14 @@ def main():
         file_handler.setFormatter(file_handler_formatter)
         logger.addHandler(file_handler)
 
-    if STREAM:
+    if SEND_LOGS_TO_STREAM:
         stream_handler = logging.StreamHandler(sys.stdout)
         stream_handler.setLevel(logging.DEBUG)
         stream_formatter = logging.Formatter('%(asctime)s - %(message)s')
         stream_handler.setFormatter(stream_formatter)
         logger.addHandler(stream_handler)
 
-    if BOT:
+    if SEND_LOGS_TO_BOT:
         bot_handler = BotHandler()
         bot_handler.setLevel(logging.INFO)
         bot_formatter = logging.Formatter('%(message)s')
@@ -129,20 +130,17 @@ def main():
         logger.addHandler(bot_handler)
 
     logger.debug('Bot started.')
-    logger.info('Program started.')
     
-    get_works()
-
-    logger.info('Program stopped.')
-
-
-if __name__ == '__main__':
-
     try:
-        main()
+        get_works()
     except KeyboardInterrupt:
-        logger.info('Program stopped.')
+        logger.debug('Program stopped.')
         exit()
     except Exception as e:
         logger.exception(e)
         raise e
+
+
+if __name__ == '__main__':
+    main()
+

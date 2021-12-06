@@ -39,32 +39,16 @@
 
 ## Переменные окружения
 
-Для улучшения уровня безопасности все ключи размещай в переменных окружения. Например, в файле *activate* из команды выше:
-
-```
-DVMN_TOKEN="<token>"
-export DVMN_TOKEN
-
-TG_TOKEN="<token>"
-export TG_TOKEN
-
-CHAT_ID="<id>"
-export CHAT_ID
-
-```
-
+Для улучшения уровня безопасности все ключи размещай в переменных окружения, в файле *.env*.
 Также в переменных окружения укажи, какие каналы вывода логов задействовать:
 
 ```
-# Записывать логи в файл?
-FILE=False
-export FILE
-# Выводить логи в терминал?
-STREAM=False
-export STREAM
-# Выводить логи в телеграм-чат?
-BOT=True
-export BOT
+DVMN_TOKEN="<token>"
+TG_TOKEN="<token>"
+TG_CHAT_ID="<id>"
+SAVE_LOGS_TO_FILE=False
+SEND_LOGS_TO_STREAM=False
+SEND_LOGS_TO_BOT=True
 ```
 
 ### Деплой
