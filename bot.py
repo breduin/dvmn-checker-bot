@@ -104,7 +104,7 @@ def main():
 
     if SAVE_LOGS_TO_FILE:
         file_handler = RotatingFileHandler(
-            'main.log',
+            'logs/main.log',
             maxBytes=100000,
             backupCount=2
             )
